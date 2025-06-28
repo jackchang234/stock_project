@@ -2,19 +2,22 @@
 
 ## 專案概述
 
-這是一個專為股票市場初學者設計的 Web 應用程式，允許用戶查看股票資訊、管理觀察清單，並追蹤基本股票數據（如價格、名稱、代碼）。
+這是一個專為股票市場初學者設計的 Web 應用程式，允許用戶查看股票資訊、管理觀察清單，並追蹤基本股票數據（如價格、名稱、代碼）。**版本 1.1 新增了歷史股價線圖功能**，提供更豐富的股票分析體驗。
 
 ### 技術架構
 
 - **後端**: Spring Boot 3.x (Java) 搭配 Spring Web、Spring Data JPA 和 H2 記憶體資料庫
-- **前端**: React 18.x 搭配 TypeScript，使用 Axios 進行 API 呼叫，Tailwind CSS 進行樣式設計
+- **前端**: React 18.x 搭配 TypeScript，使用 Axios 進行 API 呼叫，Tailwind CSS 進行樣式設計，Chart.js 繪製圖表
 - **API**: RESTful API 連接後端和前端
 
-### 初始功能
+### 核心功能
 
 - 顯示股票列表（代碼、名稱、當前價格）
 - 允許用戶新增/移除觀察清單中的股票
 - 基本搜尋功能，可依代碼或名稱搜尋股票
+- **歷史股價線圖顯示（3 個月、1 年、2 年、3 年、5 年）**
+- **股票詳情頁面，包含完整的 OHLCV 數據**
+- **模擬歷史數據生成功能**
 - 簡潔、響應式的用戶介面
 
 ### 未來擴展性
@@ -26,6 +29,10 @@
 - ✅ 股票列表顯示
 - ✅ 觀察清單管理
 - ✅ 股票搜尋功能
+- ✅ **歷史股價線圖**
+- ✅ **時間範圍選擇（3M、1Y、2Y、3Y、5Y）**
+- ✅ **股票詳情頁面**
+- ✅ **模擬數據生成**
 - ✅ 響應式設計
 - ✅ RESTful API
 - ✅ 模組化架構
@@ -99,6 +106,39 @@ npm --version
 4. **驗證啟動**
    - 前端應用運行在: http://localhost:3000
 
+## 使用指南
+
+### 基本操作
+
+1. **瀏覽股票列表**
+
+   - 訪問首頁查看所有股票
+   - 使用搜尋欄搜尋特定股票
+
+2. **管理觀察清單**
+
+   - 點擊「新增到觀察清單」按鈕
+   - 在觀察清單頁面查看已新增的股票
+   - 點擊 X 按鈕移除股票
+
+3. **查看股票詳情**
+   - 點擊股票列表中的任意行
+   - 或點擊觀察清單中的股票卡片
+   - 查看歷史價格線圖和統計數據
+
+### 歷史股價功能
+
+1. **生成模擬數據**
+
+   - 首次訪問股票詳情頁面時，系統會提示生成模擬數據
+   - 點擊「生成模擬數據」按鈕
+   - 等待數據生成完成
+
+2. **查看歷史線圖**
+   - 選擇時間範圍：3 個月、1 年、2 年、3 年、5 年
+   - 查看收盤價走勢圖
+   - 瀏覽數據統計（最高價、最低價、平均成交量等）
+
 ## API 文件
 
 ### 股票相關端點
@@ -143,6 +183,70 @@ GET /api/stocks/search?query={query}
     "price": 150.25
   }
 ]
+```
+
+### 歷史價格相關端點
+
+#### 取得股票歷史價格
+
+```
+GET /api/stock-prices/{stockId}
+```
+
+**參數:**
+
+- `stockId`: 股票識別碼
+
+**回應範例:**
+
+```json
+[
+  {
+    "id": 1,
+    "stockId": 1,
+    "symbol": "AAPL",
+    "date": "2024-01-15",
+    "openPrice": 150.0,
+    "closePrice": 151.25,
+    "highPrice": 152.5,
+    "lowPrice": 149.75,
+    "volume": 500000
+  }
+]
+```
+
+#### 根據時間範圍取得歷史價格
+
+```
+GET /api/stock-prices/{stockId}/period/{period}
+```
+
+**參數:**
+
+- `stockId`: 股票識別碼
+- `period`: 時間範圍 (3M, 1Y, 2Y, 3Y, 5Y)
+
+#### 生成模擬歷史數據
+
+```
+POST /api/stock-prices/{stockId}/generate-mock-data?days={days}
+```
+
+**參數:**
+
+- `stockId`: 股票識別碼
+- `days`: 生成的天數（預設 365）
+
+#### 檢查是否有歷史數據
+
+```
+GET /api/stock-prices/{stockId}/has-data
+```
+
+#### 取得支援的時間範圍
+
+```
+GET /api/stock-prices/supported-periods
 ```
 
 ### 觀察清單相關端點
@@ -201,18 +305,33 @@ DELETE /api/watchlist/{stockId}
 ```
 stock-project-backend/
 ├── src/main/java/com/example/stockproject/
-│   ├── controller/          # REST API 控制器
-│   ├── service/            # 業務邏輯層
-│   ├── repository/         # 資料存取層
-│   ├── model/              # 實體和 DTO
-│   │   ├── entity/         # JPA 實體
-│   │   └── dto/            # 資料傳輸物件
-│   ├── config/             # 配置類別
+│   ├── config/
+│   │   └── WebConfig.java
+│   ├── controller/
+│   │   ├── StockController.java
+│   │   ├── StockPriceController.java    # 新增：歷史價格控制器
+│   │   └── WatchlistController.java
+│   ├── model/
+│   │   ├── dto/
+│   │   │   ├── StockDTO.java
+│   │   │   ├── StockPriceDTO.java       # 新增：歷史價格 DTO
+│   │   │   └── WatchlistDTO.java
+│   │   └── entity/
+│   │       ├── Stock.java
+│   │       ├── StockPrice.java          # 新增：歷史價格實體
+│   │       └── Watchlist.java
+│   ├── repository/
+│   │   ├── StockRepository.java
+│   │   ├── StockPriceRepository.java    # 新增：歷史價格儲存庫
+│   │   └── WatchlistRepository.java
+│   ├── service/
+│   │   ├── StockService.java
+│   │   ├── StockPriceService.java       # 新增：歷史價格服務
+│   │   └── WatchlistService.java
 │   └── StockProjectApplication.java
-├── src/main/resources/
-│   ├── application.properties  # 應用程式配置
-│   └── data.sql               # 初始資料
-└── pom.xml                    # Maven 配置
+└── src/main/resources/
+    ├── application.properties
+    └── data.sql
 ```
 
 ### 前端結構
@@ -220,121 +339,122 @@ stock-project-backend/
 ```
 stock-project-frontend/
 ├── src/
-│   ├── components/          # React 元件
-│   ├── pages/              # 頁面元件
-│   ├── services/           # API 服務
-│   ├── App.tsx             # 主應用元件
-│   └── main.tsx            # 應用程式入口
-├── package.json            # npm 配置
-├── vite.config.ts          # Vite 配置
-├── tailwind.config.js      # Tailwind CSS 配置
-└── tsconfig.json           # TypeScript 配置
+│   ├── components/
+│   │   ├── SearchBar.tsx
+│   │   ├── StockList.tsx                # 更新：新增點擊跳轉功能
+│   │   └── Watchlist.tsx                # 更新：新增點擊跳轉功能
+│   ├── pages/
+│   │   ├── Home.tsx
+│   │   ├── StockDetailPage.tsx          # 新增：股票詳情頁面
+│   │   └── WatchlistPage.tsx
+│   ├── services/
+│   │   └── api.ts                       # 更新：新增歷史價格 API
+│   ├── types/
+│   │   └── index.ts                     # 更新：新增歷史價格類型
+│   ├── App.tsx                          # 更新：新增路由配置
+│   └── main.tsx
+├── package.json                         # 更新：新增 Chart.js 依賴
+└── ...
 ```
 
-## 除錯技巧
+## 版本更新記錄
 
-### 後端除錯
+### 版本 1.1 - 歷史股價功能 (2024-12-19)
 
-1. **檢查日誌**
+#### 新增功能
 
-   - 查看控制台輸出的 Spring Boot 日誌
-   - 啟用除錯日誌: 在 `application.properties` 中設定 `logging.level.org.springframework=DEBUG`
+- ✅ 股票歷史價格實體和資料庫表
+- ✅ 歷史價格 API 端點（查詢、按時間範圍查詢、生成模擬數據）
+- ✅ 股票詳情頁面，包含歷史價格線圖
+- ✅ 時間範圍選擇器（3 個月、1 年、2 年、3 年、5 年）
+- ✅ Chart.js 整合，繪製響應式線圖
+- ✅ 模擬歷史數據生成功能
+- ✅ 點擊股票列表和觀察清單跳轉到詳情頁面
+- ✅ 數據統計顯示（最高價、最低價、平均成交量等）
 
-2. **資料庫檢查**
+#### 技術改進
 
-   - 使用 H2 控制台: http://localhost:8080/h2-console
-   - 檢查 `data.sql` 檔案確認初始資料
+- 新增 `StockPrice` 實體類別，支援完整的 OHLCV 數據
+- 實現模擬數據生成算法，包含價格波動和成交量模擬
+- 前端整合 Chart.js 和 react-chartjs-2 繪製專業圖表
+- 優化用戶體驗，新增載入狀態和錯誤處理
+- 完整的 TypeScript 類型定義
 
-3. **API 測試**
-   - 使用 Postman 或 curl 測試 API 端點
-   - 檢查 HTTP 狀態碼和回應內容
+#### 修改記錄
 
-### 前端除錯
+- 後端：新增 4 個檔案，修改 1 個檔案
+- 前端：新增 1 個檔案，修改 5 個檔案
+- 資料庫：更新初始化腳本註解
 
-1. **開發者工具**
+### 版本 1.0 - 基礎功能 (2024-12-18)
 
-   - 使用 React Developer Tools 檢查元件狀態
-   - 查看瀏覽器控制台的錯誤訊息
+#### 初始功能
 
-2. **網路請求**
+- ✅ 股票列表顯示
+- ✅ 觀察清單管理
+- ✅ 股票搜尋功能
+- ✅ 響應式設計
+- ✅ RESTful API
+- ✅ 模組化架構
 
-   - 在瀏覽器 Network 標籤中檢查 API 呼叫
-   - 確認請求 URL 和回應狀態
+## 開發指南
 
-3. **狀態管理**
-   - 使用 React DevTools 檢查元件狀態變化
-   - 在關鍵位置加入 console.log 進行除錯
+### 新增功能
 
-## 未來增強功能
+1. **後端開發**
 
-### 建議的新功能
+   - 在 `model/entity` 中定義實體類別
+   - 在 `model/dto` 中定義資料傳輸物件
+   - 在 `repository` 中定義資料庫操作
+   - 在 `service` 中實現業務邏輯
+   - 在 `controller` 中定義 API 端點
 
-1. **用戶認證**
+2. **前端開發**
+   - 在 `types` 中定義 TypeScript 類型
+   - 在 `services/api.ts` 中新增 API 方法
+   - 在 `components` 中建立可重用元件
+   - 在 `pages` 中建立頁面元件
+   - 在 `App.tsx` 中配置路由
 
-   - Spring Security 搭配 JWT
-   - 用戶註冊和登入功能
-   - 個人化觀察清單
+### 測試
 
-2. **即時股票數據**
+```bash
+# 後端測試
+cd stock-project-backend
+mvn test
 
-   - 整合外部 API（如 Alpha Vantage、Yahoo Finance）
-   - WebSocket 即時更新
-   - 股票價格圖表
+# 前端測試
+cd stock-project-frontend
+npm test
+```
 
-3. **投資組合追蹤**
+### 建置
 
-   - 買賣交易記錄
-   - 投資報酬率計算
-   - 投資組合分析
+```bash
+# 後端建置
+cd stock-project-backend
+mvn clean package
 
-4. **進階功能**
-   - 股票篩選器
-   - 技術指標
-   - 新聞整合
-   - 移動應用程式
-
-### 擴展指南
-
-#### 新增後端功能
-
-1. 建立新的控制器、服務和儲存庫
-2. 更新資料庫結構和 DTO
-3. 新增單元測試
-4. 更新 API 文件
-
-#### 新增前端功能
-
-1. 建立新的元件或頁面
-2. 更新 API 服務 (`api.ts`)
-3. 在 `App.tsx` 中新增路由
-4. 更新樣式和響應式設計
-
-## 貢獻指南
-
-1. **建立分支**
-
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **遵循架構**
-
-   - 後端: 遵循分層架構（控制器、服務、儲存庫）
-   - 前端: 保持元件模組化和可重用性
-
-3. **測試**
-
-   - 為新功能撰寫單元測試
-   - 確保所有測試通過
-
-4. **文件更新**
-   - 更新 README 中的新端點或元件
-   - 新增必要的註解和文件
+# 前端建置
+cd stock-project-frontend
+npm run build
+```
 
 ## 授權
 
 本專案採用 MIT 授權條款。詳見 [LICENSE](LICENSE) 檔案。
 
+## 貢獻
+
+歡迎提交 Issue 和 Pull Request！
+
 ## 聯絡資訊
 
-如有問題或建議，請開啟 GitHub Issue 或聯絡專案維護者。
+如有任何問題或建議，請透過以下方式聯絡：
+
+- 建立 GitHub Issue
+- 發送 Email
+
+---
+
+**注意**: 這是一個學習專案，所有股票數據均為模擬資料，僅供學習和演示使用。

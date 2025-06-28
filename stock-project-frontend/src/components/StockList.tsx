@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Stock } from '../types';
 import { stockApi, watchlistApi } from '../services/api';
@@ -10,11 +11,13 @@ interface StockListProps {
 /**
  * 股票列表元件
  * 
- * 顯示股票列表，支援搜尋和新增到觀察清單功能。
+ * 顯示股票列表，支援搜尋、新增到觀察清單和跳轉到詳情頁面功能。
+ * 版本: 1.1 - 新增點擊跳轉到詳情頁面功能
  * 
  * @param searchQuery 搜尋關鍵字
  */
 const StockList: React.FC<StockListProps> = ({ searchQuery = '' }) => {
+  const navigate = useNavigate();
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(true);
   const [watchlistStatus, setWatchlistStatus] = useState<Record<number, boolean>>({});
@@ -53,7 +56,8 @@ const StockList: React.FC<StockListProps> = ({ searchQuery = '' }) => {
   };
 
   // 新增股票到觀察清單
-  const handleAddToWatchlist = async (stock: Stock) => {
+  const handleAddToWatchlist = async (stock: Stock, event: React.MouseEvent) => {
+    event.stopPropagation(); // 防止觸發行點擊事件
     try {
       await watchlistApi.addToWatchlist(stock.id);
       setWatchlistStatus(prev => ({ ...prev, [stock.id]: true }));
@@ -62,6 +66,11 @@ const StockList: React.FC<StockListProps> = ({ searchQuery = '' }) => {
       console.error('新增到觀察清單失敗:', error);
       toast.error('新增到觀察清單失敗，請稍後再試');
     }
+  };
+
+  // 跳轉到股票詳情頁面
+  const handleRowClick = (stockId: number) => {
+    navigate(`/stock/${stockId}`);
   };
 
   // 當搜尋關鍵字改變時重新載入資料
@@ -107,7 +116,11 @@ const StockList: React.FC<StockListProps> = ({ searchQuery = '' }) => {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {stocks.map((stock) => (
-            <tr key={stock.id} className="hover:bg-gray-50">
+            <tr 
+              key={stock.id} 
+              className="hover:bg-gray-50 cursor-pointer transition-colors"
+              onClick={() => handleRowClick(stock.id)}
+            >
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900">{stock.symbol}</div>
               </td>
@@ -126,7 +139,7 @@ const StockList: React.FC<StockListProps> = ({ searchQuery = '' }) => {
                   </span>
                 ) : (
                   <button
-                    onClick={() => handleAddToWatchlist(stock)}
+                    onClick={(e) => handleAddToWatchlist(stock, e)}
                     className="btn-success text-xs"
                   >
                     新增到觀察清單

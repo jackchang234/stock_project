@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Stock, WatchlistItem, AddToWatchlistRequest, CheckWatchlistResponse } from '../types';
+import { Stock, StockPrice, WatchlistItem, AddToWatchlistRequest, CheckWatchlistResponse, TimePeriod } from '../types';
 
 // 建立 Axios 實例
 const api = axios.create({
@@ -57,6 +57,57 @@ export const stockApi = {
   // 根據代碼取得股票
   getStockBySymbol: async (symbol: string): Promise<Stock> => {
     const response = await api.get<Stock>(`/stocks/symbol/${symbol}`);
+    return response.data;
+  },
+};
+
+// 股票歷史價格相關 API
+export const stockPriceApi = {
+  // 取得股票歷史價格數據
+  getStockPrices: async (stockId: number): Promise<StockPrice[]> => {
+    const response = await api.get<StockPrice[]>(`/stock-prices/${stockId}`);
+    return response.data;
+  },
+
+  // 根據時間範圍取得股票歷史價格數據
+  getStockPricesByPeriod: async (stockId: number, period: TimePeriod): Promise<StockPrice[]> => {
+    const response = await api.get<StockPrice[]>(`/stock-prices/${stockId}/period/${period}`);
+    return response.data;
+  },
+
+  // 生成模擬歷史價格數據
+  generateMockData: async (stockId: number, days: number = 365): Promise<string> => {
+    const response = await api.post<string>(`/stock-prices/${stockId}/generate-mock-data?days=${days}`);
+    return response.data;
+  },
+
+  // 檢查股票是否有歷史價格數據
+  hasHistoricalData: async (stockId: number): Promise<boolean> => {
+    const response = await api.get<boolean>(`/stock-prices/${stockId}/has-data`);
+    return response.data;
+  },
+
+  // 刪除股票歷史價格數據
+  deleteHistoricalData: async (stockId: number): Promise<string> => {
+    const response = await api.delete<string>(`/stock-prices/${stockId}`);
+    return response.data;
+  },
+
+  // 取得支援的時間範圍
+  getSupportedPeriods: async (): Promise<string[]> => {
+    const response = await api.get<string[]>('/stock-prices/supported-periods');
+    return response.data;
+  },
+
+  // 從 Yahoo Finance 取得真實歷史價格數據
+  getRealStockPricesFromYahoo: async (symbol: string, period: string): Promise<StockPrice[]> => {
+    const response = await api.get<StockPrice[]>(`/stock-prices/yahoo/${symbol}/period/${period}`);
+    return response.data;
+  },
+
+  // 從 Alpha Vantage 取得真實歷史價格數據（僅支援日線）
+  getRealStockPricesFromAlphaVantage: async (symbol: string, apiKey: string): Promise<StockPrice[]> => {
+    const response = await api.get<StockPrice[]>(`/stock-prices/alphavantage/${symbol}?apiKey=${apiKey}`);
     return response.data;
   },
 };

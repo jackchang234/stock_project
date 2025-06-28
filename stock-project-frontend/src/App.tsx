@@ -2,11 +2,13 @@ import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import WatchlistPage from './pages/WatchlistPage';
+import StockDetailPage from './pages/StockDetailPage';
 
 /**
  * 主應用程式元件
  * 
  * 包含路由配置、導航欄和主要頁面結構。
+ * 版本: 1.1 - 新增股票詳情頁面路由
  */
 const App: React.FC = () => {
   const location = useLocation();
@@ -68,6 +70,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/watchlist" element={<WatchlistPage />} />
+          <Route path="/stock/:id" element={<StockDetailPage />} />
         </Routes>
       </main>
 
@@ -79,7 +82,7 @@ const App: React.FC = () => {
               © 2024 股票市場初學者專案. 這是一個學習專案，所有資料均為模擬資料。
             </p>
             <p className="text-sm text-gray-500 mt-2">
-              使用 Spring Boot + React + TypeScript 建構
+              使用 Spring Boot + React + TypeScript 建構 | 版本 1.1 - 新增歷史股價功能
             </p>
           </div>
         </div>

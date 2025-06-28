@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { WatchlistItem } from '../types';
 import { watchlistApi } from '../services/api';
@@ -6,9 +7,11 @@ import { watchlistApi } from '../services/api';
 /**
  * 觀察清單元件
  * 
- * 顯示用戶的觀察清單，支援移除股票功能。
+ * 顯示用戶的觀察清單，支援移除股票和跳轉到詳情頁面功能。
+ * 版本: 1.1 - 新增點擊跳轉到詳情頁面功能
  */
 const Watchlist: React.FC = () => {
+  const navigate = useNavigate();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +30,8 @@ const Watchlist: React.FC = () => {
   };
 
   // 從觀察清單移除股票
-  const handleRemoveFromWatchlist = async (stockId: number, stockSymbol: string) => {
+  const handleRemoveFromWatchlist = async (stockId: number, stockSymbol: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // 防止觸發卡片點擊事件
     try {
       await watchlistApi.removeFromWatchlist(stockId);
       setWatchlist(prev => prev.filter(item => item.stockId !== stockId));
@@ -36,6 +40,11 @@ const Watchlist: React.FC = () => {
       console.error('從觀察清單移除失敗:', error);
       toast.error('從觀察清單移除失敗，請稍後再試');
     }
+  };
+
+  // 跳轉到股票詳情頁面
+  const handleCardClick = (stockId: number) => {
+    navigate(`/stock/${stockId}`);
   };
 
   // 組件載入時取得觀察清單
@@ -77,7 +86,11 @@ const Watchlist: React.FC = () => {
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {watchlist.map((item) => (
-          <div key={item.id} className="card p-4">
+          <div 
+            key={item.id} 
+            className="card p-4 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleCardClick(item.stock.id)}
+          >
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -88,7 +101,7 @@ const Watchlist: React.FC = () => {
                 </p>
               </div>
               <button
-                onClick={() => handleRemoveFromWatchlist(item.stockId, item.stock.symbol)}
+                onClick={(e) => handleRemoveFromWatchlist(item.stockId, item.stock.symbol, e)}
                 className="text-danger-600 hover:text-danger-800 transition-colors"
                 title="從觀察清單移除"
               >
@@ -103,7 +116,7 @@ const Watchlist: React.FC = () => {
                 ${item.stock.price.toFixed(2)}
               </span>
               <span className="text-xs text-gray-500">
-                股票 ID: {item.stock.id}
+                點擊查看詳情
               </span>
             </div>
           </div>
