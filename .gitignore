@@ -125,4 +125,43 @@ jspm_packages/
 .dynamodb/
 
 # TernJS port file
-.tern-port 
+.tern-port
+
+# 測試和臨時檔案
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!vite.config.ts
+!tailwind.config.js
+!postcss.config.js
+
+# API 測試結果
+*_test.json
+*_test_*.json
+alpha_test.json
+direct_alpha_test.json
+backend_alpha_test.json
+yahoo_test*.json
+
+# 空的批次檔案
+start-backend.bat
+start-frontend.bat
+
+# 開發工具檔案
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日誌檔案
+*.log
+logs/
+
+# 環境變數檔案
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local 
